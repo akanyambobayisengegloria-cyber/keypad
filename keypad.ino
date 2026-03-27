@@ -6,8 +6,8 @@
 // ==========================
 // Wi-Fi credentials
 // ==========================
-const char* ssid = "bc";
-const char* password = "clusters123";
+const char* ssid = "inema";
+const char* password = "1234567890";
 
 // ==========================
 // MQTT broker settings
@@ -16,13 +16,13 @@ const char* mqttServer = "broker.hivemq.com";
 const int mqttPort = 1883;
 const char* mqttUser = "";
 const char* mqttPassword = "";
-
-const char* buzzerTopic = "nit/buzzer/001";
-const char* keypadTopic = "nit/keypad/24";
+const char* lcdTopic = "nit/lcd/002";
+const char* buzzerTopic = "nit/buzzer/002";
+const char* keypadTopic = "nit/keypad/002";
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-const int buzzerPin = 25;
+const int buzzerPin = 5;
 bool buzzerState = false;
 const byte ROWS = 4; 
 const byte COLS = 4; 
@@ -32,8 +32,8 @@ char keys[ROWS][COLS] = {
   {'7','8','9','C'},
   {'*','0','#','D'}
 };
-byte rowPins[ROWS] = {14, 25, 33, 35};
-byte colPins[COLS] = {26, 27, 34, 32};
+byte rowPins[ROWS] = {14, 27,26 , 25};
+byte colPins[COLS] = {33, 32, 35, 34};
 
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 void connectWiFi() {
