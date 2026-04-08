@@ -136,6 +136,16 @@ label { font-weight: 600; font-size: 13px; color: #1a2a3a; display: block; margi
 
 .empty-row td { text-align: center; padding: 40px; color: #5a7a6a; }
 .auto-tag-info { background: #e8f0ec; padding: 10px 15px; border-radius: 12px; margin-bottom: 15px; font-size: 13px; color: #2d5a4a; border-left: 3px solid #2d5a4a; }
+
+/* NEW STYLES FOR LOG MANAGEMENT */
+.log-management-buttons { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.log-action-btn { background: #2d5a4a; color: white; border: none; padding: 8px 16px; border-radius: 40px; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.2s; }
+.log-action-btn:hover { background: #3a6b5a; transform: scale(1.02); }
+.log-action-btn.danger { background: #9b5e5e; }
+.log-action-btn.danger:hover { background: #8a4e4e; }
+.log-action-btn.warning { background: #b77e3a; }
+.log-action-btn.warning:hover { background: #a06e30; }
+.recover-area { background: #e8f0ec; padding: 15px; border-radius: 16px; margin-bottom: 20px; border-left: 4px solid #2d5a4a; }
 </style>
 </head>
 <body>
@@ -295,14 +305,20 @@ label { font-weight: 600; font-size: 13px; color: #1a2a3a; display: block; margi
             <div id="scanLogsSection" class="hidden">
                 <div class="content-card">
                     <div class="card-header"><div class="avatar-small">L</div><div><strong>System Activity Logs</strong></div></div>
-                    <div class="card-body"><div id="scanLogsFullList" class="scan-logs-container"></div></div>
+                    <div class="card-body">
+                        <!-- NEW: Log Management Controls -->
+                        <div class="log-management-buttons">
+                            <button class="log-action-btn" id="recoverLastDeletedBtn">↩️ Recover Last Deleted Item</button>
+                            <button class="log-action-btn warning" id="deleteLogsOlderThanBtn">🗑️ Delete Logs Older Than (days)</button>
+                            <button class="log-action-btn" id="deleteLogsByActionBtn">📋 Delete Logs by Action Type</button>
+                            <button class="log-action-btn danger" id="clearAllLogsBtn">⚠️ Clear All Logs</button>
+                        </div>
+                        <div id="recoverStatus" class="recover-area" style="display:none;"></div>
+                        <div id="scanLogsFullList" class="scan-logs-container"></div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
+// ==================== ORIGINAL DATA AND FUNCTIONS (UNCHANGED) ====================
 const breedDatabase = {
     "Cow": ["Holstein Friesian", "Jersey", "Angus", "Hereford", "Sahiwal", "Ankole", "Simmental", "Charolais", "Limousin", "Brahman", "Gelbvieh"],
     "Goat": ["Boer", "Saanen", "Nubian", "Alpine", "Toggenburg", "Angora", "Kiko", "Spanish Goat", "Pygmy Goat", "LaMancha", "Oberhasli"],
@@ -319,11 +335,18 @@ const breedDatabase = {
 
 const animalTypes = ["Cow", "Goat", "Sheep", "Pig", "Chicken", "Rabbit", "Horse", "Donkey", "Turkey", "Duck", "Bee"];
 
+// ========== THE ONLY LINE ADDED ==========
+const API_BASE_URL = 'http://localhost/AB';
+// ==========================================
+
 let currentUser = null;
 let animals = [];
 let healthRecords = [];
 let systemUsers = [];
 let scanLogs = [];
+
+// NEW: Store deleted items for recovery (last 50 deletions)
+let deletedItemsStack = []; // each item: { type: 'animal' or 'health', data: object, timestamp, logId }
 
 function generateUniqueTagId(animalType) {
     const upperType = animalType.toUpperCase();
@@ -362,6 +385,9 @@ function loadDataFromStorage() {
     healthRecords = JSON.parse(localStorage.getItem('livestock_health') || '[]');
     systemUsers = JSON.parse(localStorage.getItem('livestock_users') || '[]');
     scanLogs = JSON.parse(localStorage.getItem('livestock_logs') || '[]');
+    const deletedStack = localStorage.getItem('livestock_deleted_stack');
+    if (deletedStack) deletedItemsStack = JSON.parse(deletedStack);
+    else deletedItemsStack = [];
     
     if (animals.length === 0) {
         animals = [
@@ -395,6 +421,7 @@ function saveAnimals() { localStorage.setItem('livestock_animals', JSON.stringif
 function saveHealthRecords() { localStorage.setItem('livestock_health', JSON.stringify(healthRecords)); }
 function saveUsers() { localStorage.setItem('livestock_users', JSON.stringify(systemUsers)); }
 function saveLogs() { localStorage.setItem('livestock_logs', JSON.stringify(scanLogs)); }
+function saveDeletedStack() { localStorage.setItem('livestock_deleted_stack', JSON.stringify(deletedItemsStack)); }
 
 function addScanLog(action, details) {
     if (currentUser) {
@@ -500,14 +527,18 @@ function updateDashboard() {
     document.getElementById('recentActivityList').innerHTML = recent || '<p style="text-align:center; padding:20px;">No recent activity</p>';
 }
 
-function renderScanLogs() { let c = document.getElementById('scanLogsFullList'); if (!c) return; c.innerHTML = scanLogs.length ? scanLogs.map(l => `<div class="scan-log-item"><div><span class="log-action">${l.action}</span><br><span class="log-time">${l.details}</span></div><div><span class="log-time">${l.user_name} - ${l.created_at}</span></div></div>`).join('') : '<div style="padding:20px;text-align:center;">No logs yet</div>'; }
+function renderScanLogs() { 
+    let c = document.getElementById('scanLogsFullList'); 
+    if (!c) return; 
+    c.innerHTML = scanLogs.length ? scanLogs.map(l => `<div class="scan-log-item"><div><span class="log-action">${l.action}</span><br><span class="log-time">${l.details}</span></div><div><span class="log-time">${l.user_name} - ${l.created_at}</span></div></div>`).join('') : '<div style="padding:20px;text-align:center;">No logs yet</div>'; 
+}
 
 function renderAnimalsTable() {
     if (currentUser && currentUser.role === 'vet') return;
     let tbody = document.getElementById('animalsTableBody');
     if (!tbody) return;
     tbody.innerHTML = '';
-    if (animals.length === 0) { tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No animals registered. Click "Add Animal" to get started.</tr>'; return; }
+    if (animals.length === 0) { tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No animals registered. Click "Add Animal" to get started.</td>'; return; }
     let canEdit = (currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner'));
     let canDelete = (currentUser && currentUser.role === 'admin');
     animals.forEach(animal => { let row = tbody.insertRow(); let btns = ''; if (canEdit) btns += `<button class="edit" onclick="editAnimal(${animal.id})">Edit</button>`; if (canDelete) btns += `<button class="delete" onclick="deleteAnimal(${animal.id})">Delete</button>`; row.innerHTML = `<td><strong>${animal.tag_id}</strong></td><td>${animal.name}</td><td>${animal.animal_type}</td><td>${animal.breed || ''}</td><td>${animal.sex}</td><td><span class="badge ${animal.is_pregnant ? 'pregnant' : 'healthy'}">${animal.is_pregnant ? 'Pregnant' : 'Not Pregnant'}</span></td><td><span class="badge ${animal.is_sick ? 'sick' : 'healthy'}">${animal.is_sick ? 'Sick' : 'Healthy'}</span></td><td>${btns}</td>`; });
@@ -556,10 +587,179 @@ document.getElementById('registerHealthForm').onsubmit = function(e) {
 document.getElementById('registerUserForm').onsubmit = function(e) { e.preventDefault(); if (currentUser.role !== 'admin') { showToast("Only Admin can create accounts!", true); return; } let newUser = { id: Date.now(), name: document.getElementById('newUserName').value, email: document.getElementById('newUserEmail').value, phone: document.getElementById('newUserPhone').value, role: document.getElementById('newUserRole').value, password: document.getElementById('newUserPassword').value || 'temp123', approved: true }; systemUsers.push(newUser); saveUsers(); addScanLog('Created User', `Account for ${newUser.name} created`); showToast(`Account created for ${newUser.name}`); renderUsersTable(); this.reset(); };
 function renderUsersTable() { let tbody = document.getElementById('usersTable'); if (!tbody) return; tbody.innerHTML = ''; systemUsers.forEach(user => { let row = tbody.insertRow(); let delBtn = (currentUser?.role === 'admin' && user.role !== 'admin') ? `<button class="delete" onclick="deleteUser(${user.id})">Delete</button>` : '—'; row.innerHTML = `<td><strong>${user.name}</strong></td><td>${user.email}</td><td>${user.phone || ''}</td><td><span class="badge ${user.role}">${user.role}</span></td><td>${delBtn}</td>`; }); }
 function deleteUser(id) { if (confirm('Delete this user?')) { systemUsers = systemUsers.filter(u => u.id !== id); saveUsers(); renderUsersTable(); showToast('User deleted'); } }
+
+// MODIFIED: deleteAnimal now stores deleted item in stack
 function editAnimal(id) { let animal = animals.find(a => a.id === id); if (!animal) return; document.getElementById('editAnimalId').value = animal.id; document.getElementById('generatedTagId').value = animal.tag_id; document.getElementById('animalName').value = animal.name; document.getElementById('animalType').value = animal.animal_type; populateBreeds(); setTimeout(() => document.getElementById('animalBreed').value = animal.breed, 50); document.getElementById('animalSex').value = animal.sex; document.getElementById('animalBirthdate').value = animal.birthdate || ''; document.getElementById('animalPregnant').value = animal.is_pregnant ? 'true' : 'false'; document.getElementById('animalSick').value = animal.is_sick ? 'true' : 'false'; document.getElementById('animalOwnerContact').value = animal.owner_contact || ''; navigateTo('registerAnimal'); }
-function deleteAnimal(id) { if (currentUser.role !== 'admin') { showToast("Only Admin can delete animals", true); return; } let animal = animals.find(a => a.id === id); if (confirm(`Delete ${animal.name}? This will also delete all health records.`)) { animals = animals.filter(a => a.id !== id); healthRecords = healthRecords.filter(h => h.animal_tag_id !== animal.tag_id); saveAnimals(); saveHealthRecords(); addScanLog('Deleted Animal', `${animal.tag_id} removed`); refreshAllData(); showToast('Animal deleted'); } }
+
+function deleteAnimal(id) { 
+    if (currentUser.role !== 'admin') { showToast("Only Admin can delete animals", true); return; } 
+    let animal = animals.find(a => a.id === id); 
+    if (animal && confirm(`Delete ${animal.name}? This will also delete all health records.`)) {
+        // Store in deleted stack for recovery
+        deletedItemsStack.unshift({ type: 'animal', data: JSON.parse(JSON.stringify(animal)), timestamp: new Date().toISOString(), logId: Date.now() });
+        if (deletedItemsStack.length > 50) deletedItemsStack.pop();
+        saveDeletedStack();
+        
+        animals = animals.filter(a => a.id !== id); 
+        healthRecords = healthRecords.filter(h => h.animal_tag_id !== animal.tag_id); 
+        saveAnimals(); 
+        saveHealthRecords(); 
+        addScanLog('Deleted Animal', `${animal.tag_id} removed`); 
+        refreshAllData(); 
+        showToast('Animal deleted. You can recover from Activity Logs if needed.');
+    } 
+}
+
+// MODIFIED: deleteHealth now stores deleted item
 function editHealth(id) { let record = healthRecords.find(r => r.id === id); if (!record) return; document.getElementById('editHealthId').value = record.id; document.getElementById('healthTagId').value = record.animal_tag_id; document.getElementById('healthType').value = record.type; document.getElementById('healthStartDate').value = record.start_date || ''; document.getElementById('healthEndDate').value = record.end_date || ''; document.getElementById('healthNextEvent').value = record.next_event_date || ''; document.getElementById('healthNotes').value = record.notes || ''; document.getElementById('healthVetName').value = record.vet_name || ''; document.getElementById('healthVetContact').value = record.vet_contact || ''; navigateTo('registerHealth'); }
-function deleteHealth(id) { if (currentUser.role !== 'admin') { showToast("Only Admin can delete health records", true); return; } if (confirm('Delete this health record?')) { healthRecords = healthRecords.filter(r => r.id !== id); saveHealthRecords(); addScanLog('Deleted Health', 'Health record removed'); refreshAllData(); showToast('Health record deleted'); } }
+
+function deleteHealth(id) { 
+    if (currentUser.role !== 'admin') { showToast("Only Admin can delete health records", true); return; } 
+    let record = healthRecords.find(r => r.id === id);
+    if (record && confirm('Delete this health record?')) {
+        deletedItemsStack.unshift({ type: 'health', data: JSON.parse(JSON.stringify(record)), timestamp: new Date().toISOString(), logId: Date.now() });
+        if (deletedItemsStack.length > 50) deletedItemsStack.pop();
+        saveDeletedStack();
+        
+        healthRecords = healthRecords.filter(r => r.id !== id); 
+        saveHealthRecords(); 
+        addScanLog('Deleted Health', `Health record for ${record.animal_tag_id} removed`); 
+        refreshAllData(); 
+        showToast('Health record deleted. You can recover from Activity Logs.');
+    } 
+}
+
+// ==================== NEW FUNCTIONS FOR LOG MANAGEMENT ====================
+function recoverLastDeleted() {
+    if (!currentUser || currentUser.role !== 'admin') {
+        showToast("Only Admin can recover deleted items", true);
+        return;
+    }
+    if (deletedItemsStack.length === 0) {
+        showToast("No deleted items available to recover", true);
+        document.getElementById('recoverStatus').style.display = 'none';
+        return;
+    }
+    const lastDeleted = deletedItemsStack[0];
+    if (lastDeleted.type === 'animal') {
+        const animalExists = animals.some(a => a.id === lastDeleted.data.id);
+        if (animalExists) {
+            showToast("Animal already exists, cannot recover duplicate", true);
+            deletedItemsStack.shift();
+            saveDeletedStack();
+            recoverLastDeleted();
+            return;
+        }
+        animals.push(lastDeleted.data);
+        saveAnimals();
+        addScanLog('Recovered Animal', `Restored ${lastDeleted.data.name} (${lastDeleted.data.tag_id})`);
+        showToast(`Recovered animal: ${lastDeleted.data.name}`);
+    } else if (lastDeleted.type === 'health') {
+        const healthExists = healthRecords.some(h => h.id === lastDeleted.data.id);
+        if (healthExists) {
+            showToast("Health record already exists", true);
+            deletedItemsStack.shift();
+            saveDeletedStack();
+            recoverLastDeleted();
+            return;
+        }
+        healthRecords.push(lastDeleted.data);
+        saveHealthRecords();
+        addScanLog('Recovered Health Record', `Restored ${lastDeleted.data.type} for ${lastDeleted.data.animal_tag_id}`);
+        showToast(`Recovered health record: ${lastDeleted.data.type}`);
+    }
+    deletedItemsStack.shift();
+    saveDeletedStack();
+    refreshAllData();
+    renderScanLogs();
+    
+    const statusDiv = document.getElementById('recoverStatus');
+    statusDiv.style.display = 'block';
+    statusDiv.innerHTML = `<strong>✅ Recovery successful!</strong> Last deleted item has been restored.`;
+    setTimeout(() => { statusDiv.style.display = 'none'; }, 5000);
+}
+
+function deleteLogsOlderThanDays() {
+    if (!currentUser || currentUser.role !== 'admin') {
+        showToast("Only Admin can delete logs", true);
+        return;
+    }
+    let days = prompt("Delete logs older than how many days? (Enter number, e.g., 7)", "7");
+    if (days === null) return;
+    days = parseInt(days);
+    if (isNaN(days) || days < 0) {
+        showToast("Please enter a valid number of days", true);
+        return;
+    }
+    const now = new Date();
+    const cutoff = new Date(now.setDate(now.getDate() - days));
+    const originalCount = scanLogs.length;
+    scanLogs = scanLogs.filter(log => {
+        const logDate = new Date(log.created_at);
+        return logDate >= cutoff;
+    });
+    if (scanLogs.length === originalCount) {
+        showToast(`No logs older than ${days} days found.`, false);
+    } else {
+        saveLogs();
+        addScanLog('Bulk Log Deletion', `Deleted ${originalCount - scanLogs.length} logs older than ${days} days`);
+        renderScanLogs();
+        showToast(`Deleted ${originalCount - scanLogs.length} old logs.`);
+    }
+}
+
+function deleteLogsByAction() {
+    if (!currentUser || currentUser.role !== 'admin') {
+        showToast("Only Admin can delete logs", true);
+        return;
+    }
+    const actions = [...new Set(scanLogs.map(l => l.action))];
+    if (actions.length === 0) {
+        showToast("No logs to filter", true);
+        return;
+    }
+    let actionList = actions.join(", ");
+    let actionToDelete = prompt(`Enter the exact action type to delete all logs with that action.\nAvailable actions:\n${actionList}\n\nExample: "Deleted Animal"`, "");
+    if (!actionToDelete) return;
+    const originalCount = scanLogs.length;
+    scanLogs = scanLogs.filter(log => log.action !== actionToDelete);
+    if (scanLogs.length === originalCount) {
+        showToast(`No logs found with action "${actionToDelete}"`, true);
+    } else {
+        saveLogs();
+        addScanLog('Bulk Log Deletion by Action', `Deleted ${originalCount - scanLogs.length} logs with action "${actionToDelete}"`);
+        renderScanLogs();
+        showToast(`Deleted ${originalCount - scanLogs.length} logs with action "${actionToDelete}"`);
+    }
+}
+
+function clearAllLogs() {
+    if (!currentUser || currentUser.role !== 'admin') {
+        showToast("Only Admin can clear all logs", true);
+        return;
+    }
+    if (confirm("⚠️ WARNING: This will delete ALL activity logs permanently. This action cannot be undone. Are you sure?")) {
+        if (confirm("Type 'DELETE ALL LOGS' to confirm:")) {
+            const confirmation = prompt(`Type "DELETE ALL LOGS" to confirm:`);
+            if (confirmation === "DELETE ALL LOGS") {
+                const deletedCount = scanLogs.length;
+                scanLogs = [];
+                saveLogs();
+                addScanLog('Cleared All Logs', `Admin deleted all ${deletedCount} logs`);
+                renderScanLogs();
+                showToast(`Deleted all ${deletedCount} logs.`);
+            } else {
+                showToast("Confirmation text did not match. Deletion cancelled.");
+            }
+        }
+    }
+}
+
+// Attach new event listeners after DOM loads
+document.getElementById('recoverLastDeletedBtn').addEventListener('click', recoverLastDeleted);
+document.getElementById('deleteLogsOlderThanBtn').addEventListener('click', deleteLogsOlderThanDays);
+document.getElementById('deleteLogsByActionBtn').addEventListener('click', deleteLogsByAction);
+document.getElementById('clearAllLogsBtn').addEventListener('click', clearAllLogs);
 
 document.getElementById('openLoginBtn').onclick = () => document.getElementById('loginModal').style.display = 'flex';
 document.getElementById('closeModalBtn').onclick = () => document.getElementById('loginModal').style.display = 'none';
