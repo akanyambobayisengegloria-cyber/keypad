@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Livestock Management | Auto Tag ID System</title>
+<title>Smart Livestock Management | RFID Auto ID System</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
@@ -136,8 +136,8 @@ label { font-weight: 600; font-size: 13px; color: #1a2a3a; display: block; margi
 
 .empty-row td { text-align: center; padding: 40px; color: #5a7a6a; }
 .auto-tag-info { background: #e8f0ec; padding: 10px 15px; border-radius: 12px; margin-bottom: 15px; font-size: 13px; color: #2d5a4a; border-left: 3px solid #2d5a4a; }
+.rfid-info { background: #e0e8f0; padding: 10px 15px; border-radius: 12px; margin-bottom: 15px; font-size: 13px; color: #1a2a3a; border-left: 3px solid #3a6b8a; }
 
-/* NEW STYLES FOR LOG MANAGEMENT */
 .log-management-buttons { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
 .log-action-btn { background: #2d5a4a; color: white; border: none; padding: 8px 16px; border-radius: 40px; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.2s; }
 .log-action-btn:hover { background: #3a6b5a; transform: scale(1.02); }
@@ -166,9 +166,9 @@ label { font-weight: 600; font-size: 13px; color: #1a2a3a; display: block; margi
             <input type="file" id="landingImageUpload" accept="image/*" style="display: none;">
         </div>
         <h1><span>Smart</span> Livestock Management</h1>
-        <p>Efficient animal tracking, health records, and farm analytics</p>
+        <p>RFID Animal tracking, health records, and farm analytics</p>
         <div class="features">
-            <div class="feature-card"><h3>Animal Tracking</h3><p>Monitor all livestock data</p></div>
+            <div class="feature-card"><h3>RFID Tracking</h3><p>Scan RFID tags for instant ID</p></div>
             <div class="feature-card"><h3>Health Records</h3><p>Vaccination & disease logs</p></div>
             <div class="feature-card"><h3>Analytics</h3><p>Farm performance insights</p></div>
         </div>
@@ -185,10 +185,18 @@ label { font-weight: 600; font-size: 13px; color: #1a2a3a; display: block; margi
             <option value="owner">Owner</option>
         </select>
         <input type="password" id="loginPassword" placeholder="Password">
+        <div style="margin: 5px 0 10px 0; font-size: 12px; color: #666;">
+            <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="showPasswordCheckbox"> Show Password
+            </label>
+        </div>
         <button id="loginBtn">Login</button>
         <div id="loginError" class="login-error"></div>
         <div id="accountHelpMessage" class="admin-contact-info" style="display:none;">
-            <strong>No account?</strong><br>Contact Administrator to create your account.<br>Admin Email: admin@livestock.com
+            <strong>Demo Credentials:</strong><br>
+            Admin: admin123<br>
+            Vet: vet123<br>
+            Owner: owner123
         </div>
         <p style="text-align:center; margin-top:15px; font-size:12px; color:#5a7a6a;">Demo: admin123 | vet123 | owner123</p>
     </div>
@@ -232,8 +240,22 @@ label { font-weight: 600; font-size: 13px; color: #1a2a3a; display: block; margi
                     <div class="card-header"><div class="avatar-small">A</div><div><strong>All Livestock</strong></div></div>
                     <div class="card-body">
                         <div style="overflow-x: auto;">
-                            <table>
-                                <thead><tr><th>Tag ID</th><th>Name</th><th>Type</th><th>Breed</th><th>Sex</th><th>Pregnancy</th><th>Health</th><th>Actions</th></tr></thead>
+                            <table id="animalsTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID (Auto)</th>
+                                        <th>RFID Tag ID</th>
+                                        <th>Name</th>
+                                        <th>Type</th>
+                                        <th>Breed</th>
+                                        <th>Sex</th>
+                                        <th>Birth Date</th>
+                                        <th>Pregnancy</th>
+                                        <th>Health</th>
+                                        <th>Owner Contact</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
                                 <tbody id="animalsTableBody"></tbody>
                             </table>
                         </div>
@@ -244,10 +266,16 @@ label { font-weight: 600; font-size: 13px; color: #1a2a3a; display: block; margi
             <div id="registerAnimalSection" class="hidden">
                 <form id="registerAnimalForm">
                     <h3>Register New Animal</h3>
-                    <div class="auto-tag-info"><strong>Auto Tag ID:</strong> Tag ID will be automatically generated based on animal type (e.g., COW-001, GOAT-001)</div>
+                    <div class="auto-tag-info"><strong>Auto ID:</strong> ID will be automatically generated based on animal type (e.g., COW-001, GOAT-001)</div>
+                    <div class="rfid-info"><strong>📡 RFID Scanner Ready:</strong> Scan RFID tag/card to capture Tag ID</div>
                     <div id="animalFormError" class="error-message" style="display:none;"></div>
-                    <label>Generated Tag ID</label>
+                    
+                    <label>🔍 RFID Tag ID (Scan RFID Card)</label>
+                    <input type="text" id="rfidTagId" placeholder="Scan RFID card here..." style="font-family: monospace; font-weight: bold;">
+                    
+                    <label>🆔 Auto-Generated ID</label>
                     <input type="text" id="generatedTagId" readonly style="background:#e8f0ec; font-weight:bold;">
+                    
                     <label>Animal Name</label><input type="text" id="animalName" placeholder="Animal Name" required>
                     <label>Animal Type</label><select id="animalType" required><option value="">Select Type</option></select>
                     <label>Breed</label><select id="animalBreed" required><option value="">Select Breed</option></select>
@@ -266,8 +294,20 @@ label { font-weight: 600; font-size: 13px; color: #1a2a3a; display: block; margi
                     <div class="card-header"><div class="avatar-small">H</div><div><strong>Health Records</strong></div></div>
                     <div class="card-body">
                         <div style="overflow-x: auto;">
-                            <table>
-                                <thead><tr><th>Animal Tag</th><th>Animal Name</th><th>Type</th><th>Start Date</th><th>End Date</th><th>Next Event</th><th>Vet Name</th><th>Actions</th></tr></thead>
+                            <table id="healthTable">
+                                <thead>
+                                    <tr>
+                                        <th>Animal ID</th>
+                                        <th>RFID Tag</th>
+                                        <th>Animal Name</th>
+                                        <th>Type</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Next Event</th>
+                                        <th>Vet Name</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
                                 <tbody id="healthTableBody"></tbody>
                             </table>
                         </div>
@@ -279,8 +319,8 @@ label { font-weight: 600; font-size: 13px; color: #1a2a3a; display: block; margi
                 <form id="registerHealthForm">
                     <h3>Add Health Record</h3>
                     <div id="healthFormError" class="error-message" style="display:none;"></div>
-                    <label>Select Animal</label><select id="healthTagId" required></select>
-                    <label>Record Type</label><select id="healthType"><option value="Vaccination">Vaccination</option><option value="Pregnancy Check">Pregnancy Check</option><option value="Disease Treatment">Disease Treatment</option><option value="General Checkup">General Checkup</option><option value="Deworming">Deworming</option></select>
+                    <label>Select Animal (by Auto ID)</label><select id="healthTagId" required></select>
+                    <label>Record Type</label><select id="healthType"><option value="vaccination">Vaccination</option><option value="pregnancy">Pregnancy Check</option><option value="disease">Disease Treatment</option></select>
                     <label>Start Date</label><input type="date" id="healthStartDate" required>
                     <label>End Date</label><input type="date" id="healthEndDate">
                     <label>Next Scheduled Event</label><input type="date" id="healthNextEvent">
@@ -297,7 +337,18 @@ label { font-weight: 600; font-size: 13px; color: #1a2a3a; display: block; margi
                     <div class="card-header"><div class="avatar-small">U</div><div><strong>User Management (Admin Only)</strong></div></div>
                     <div class="card-body">
                         <form id="registerUserForm"><h4>Create New Account</h4><input type="text" id="newUserName" placeholder="Full Name" required><input type="email" id="newUserEmail" placeholder="Email" required><input type="tel" id="newUserPhone" placeholder="Phone Number" required><select id="newUserRole"><option value="owner">Owner</option><option value="vet">Veterinarian</option><option value="admin">Admin</option></select><input type="password" id="newUserPassword" placeholder="Password"><button type="submit" class="submit">Create Account</button></form>
-                        <table><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Action</th></tr></thead><tbody id="usersTable"></tbody></table>
+                        <table id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Role</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -306,7 +357,6 @@ label { font-weight: 600; font-size: 13px; color: #1a2a3a; display: block; margi
                 <div class="content-card">
                     <div class="card-header"><div class="avatar-small">L</div><div><strong>System Activity Logs</strong></div></div>
                     <div class="card-body">
-                        <!-- NEW: Log Management Controls -->
                         <div class="log-management-buttons">
                             <button class="log-action-btn" id="recoverLastDeletedBtn">↩️ Recover Last Deleted Item</button>
                             <button class="log-action-btn warning" id="deleteLogsOlderThanBtn">🗑️ Delete Logs Older Than (days)</button>
@@ -317,8 +367,754 @@ label { font-weight: 600; font-size: 13px; color: #1a2a3a; display: block; margi
                         <div id="scanLogsFullList" class="scan-logs-container"></div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-// ==================== ORIGINAL DATA AND FUNCTIONS (UNCHANGED) ====================
+// ==================== API CONFIGURATION ====================
+const API_BASE_URL = 'http://192.168.137.1/AB/api.php';
+
+// Global variables
+let currentUser = null;
+let animalsCache = [];
+let healthRecordsCache = [];
+let usersCache = [];
+let logsCache = [];
+
+// ==================== API CALL FUNCTIONS ====================
+async function apiCall(endpoint, method = 'GET', data = null) {
+    const url = `${API_BASE_URL}/${endpoint}`;
+    const options = {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    };
+    
+    if (data) {
+        options.body = JSON.stringify(data);
+    }
+    
+    try {
+        const response = await fetch(url, options);
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        console.error('API Error:', error);
+        showToast('Connection error: ' + error.message, true);
+        return null;
+    }
+}
+
+// ==================== DATA LOADING FUNCTIONS ====================
+async function loadAnimals() {
+    const result = await apiCall('animals', 'GET');
+    if (result && !result.error) {
+        animalsCache = result;
+        return result;
+    }
+    return [];
+}
+
+async function loadHealthRecords() {
+    const result = await apiCall('health', 'GET');
+    if (result && !result.error) {
+        healthRecordsCache = result;
+        return result;
+    }
+    return [];
+}
+
+async function loadUsers() {
+    const result = await apiCall('users', 'GET');
+    if (result && !result.error) {
+        usersCache = result;
+        return result;
+    }
+    return [];
+}
+
+async function loadLogs() {
+    const result = await apiCall('logs', 'GET');
+    if (result && !result.error) {
+        logsCache = result;
+        return result;
+    }
+    return [];
+}
+
+async function loadDashboardStats() {
+    const result = await apiCall('dashboard', 'GET');
+    if (result && !result.error) {
+        document.getElementById('totalAnimals').innerText = result.totalAnimals || 0;
+        document.getElementById('totalHealth').innerText = result.totalHealth || 0;
+        document.getElementById('sickCount').innerText = result.sickCount || 0;
+        document.getElementById('totalUsers').innerText = result.totalUsers || 0;
+        
+        let recentHtml = '';
+        if (result.recentActivity && result.recentActivity.length > 0) {
+            for (let log of result.recentActivity) {
+                recentHtml += `<div style="padding:10px 0; border-bottom:1px solid #e0e8e2;">
+                    <strong>${log.action}</strong> - ${log.user_name}<br>
+                    <span style="font-size:11px; color:#5a7a6a;">${log.created_at}</span>
+                </div>`;
+            }
+        }
+        document.getElementById('recentActivityList').innerHTML = recentHtml || '<p style="text-align:center; padding:20px;">No recent activity</p>';
+        return true;
+    }
+    return false;
+}
+
+// ==================== CHECK FOR PENDING RFID TAG ====================
+async function checkPendingRFIDTag() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/get_pending_tag`);
+        const data = await response.json();
+        
+        if (data.tagId) {
+            const rfidInput = document.getElementById('rfidTagId');
+            if (rfidInput && document.getElementById('registerAnimalSection').classList.contains('hidden') === false) {
+                rfidInput.value = data.tagId;
+                rfidInput.style.borderColor = '#2d6a4f';
+                showToast(`✅ RFID Tag detected: ${data.tagId}`, false);
+                setTimeout(() => {
+                    rfidInput.style.borderColor = '#c5d5cd';
+                }, 2000);
+            }
+        }
+    } catch (error) {
+        console.error('Error checking pending RFID:', error);
+    }
+}
+
+// Poll for pending RFID tags every 2 seconds when on register page
+setInterval(() => {
+    if (document.getElementById('registerAnimalSection') && 
+        !document.getElementById('registerAnimalSection').classList.contains('hidden')) {
+        checkPendingRFIDTag();
+    }
+}, 2000);
+
+// ==================== UI RENDERING FUNCTIONS ====================
+async function renderAnimalsTable() {
+    if (currentUser && currentUser.role === 'vet') return;
+    
+    const tbody = document.getElementById('animalsTableBody');
+    if (!tbody) return;
+    
+    const animals = await loadAnimals();
+    tbody.innerHTML = '';
+    
+    if (animals.length === 0) { 
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="11">No animals registered. Click "Add Animal" to get started.</td></tr>'; 
+        return; 
+    }
+    
+    const canEdit = (currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner'));
+    const canDelete = (currentUser && currentUser.role === 'admin');
+    
+    for (let animal of animals) { 
+        const row = tbody.insertRow();
+        const pregnancyBadge = animal.is_pregnant ? 'pregnant' : 'healthy';
+        const pregnancyText = animal.is_pregnant ? 'Pregnant' : 'Not Pregnant';
+        const healthBadge = animal.is_sick ? 'sick' : 'healthy';
+        const healthText = animal.is_sick ? 'Sick' : 'Healthy';
+        
+        let buttons = '';
+        if (canEdit) buttons += `<button class="edit" onclick="editAnimal('${animal.id}')">Edit</button>`;
+        if (canDelete) buttons += `<button class="delete" onclick="deleteAnimal('${animal.id}')">Delete</button>`;
+        
+        row.innerHTML = `
+            <td><strong>${animal.id || '—'}</strong></td>
+            <td><code>${animal.rfid_tag || '—'}</code></td>
+            <td>${animal.name || '—'}</td>
+            <td>${animal.animal_type || '—'}</td>
+            <td>${animal.breed || '—'}</td>
+            <td>${animal.sex || '—'}</td>
+            <td>${animal.birthdate || '—'}</td>
+            <td><span class="badge ${pregnancyBadge}">${pregnancyText}</span></td>
+            <td><span class="badge ${healthBadge}">${healthText}</span></td>
+            <td>${animal.owner_contact || '—'}</td>
+            <td>${buttons}</td>
+        `;
+    }
+}
+
+async function renderHealthRecordsTable() {
+    const tbody = document.getElementById('healthTableBody');
+    if (!tbody) return;
+    
+    const records = await loadHealthRecords();
+    tbody.innerHTML = '';
+    
+    if (records.length === 0) { 
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No health records. Click "Add Health Record" to get started.</td></tr>'; 
+        return; 
+    }
+    
+    const canEdit = (currentUser && (currentUser.role === 'admin' || currentUser.role === 'vet'));
+    const canDelete = (currentUser && currentUser.role === 'admin');
+    
+    for (let record of records) { 
+        const row = tbody.insertRow();
+        let buttons = '';
+        if (canEdit) buttons += `<button class="edit" onclick="editHealth(${record.id})">Edit</button>`;
+        if (canDelete) buttons += `<button class="delete" onclick="deleteHealth(${record.id})">Delete</button>`;
+        
+        row.innerHTML = `
+            <td><strong>${record.animal_id || '—'}</strong></td>
+            <td><code>${record.rfid_tag || '—'}</code></td>
+            <td>${record.animal_name || '—'}</td>
+            <td><span class="badge vaccination">${record.type || '—'}</span></td>
+            <td>${record.start_date || '—'}</td>
+            <td>${record.end_date || '—'}</td>
+            <td>${record.next_event_date || '—'}</td>
+            <td>${record.vet_name || '—'}</td>
+            <td>${buttons}</td>
+        `;
+    }
+}
+
+async function renderUsersTable() { 
+    if (!currentUser || currentUser.role !== 'admin') return;
+    
+    const tbody = document.getElementById('usersTableBody'); 
+    if (!tbody) return; 
+    
+    const users = await loadUsers();
+    tbody.innerHTML = ''; 
+    
+    for (let user of users) { 
+        const row = tbody.insertRow(); 
+        const delBtn = (currentUser?.role === 'admin' && user.role !== 'admin') ? 
+            `<button class="delete" onclick="deleteUser(${user.id})">Delete</button>` : '—'; 
+        row.innerHTML = `
+            <td><strong>${user.name || '—'}</strong></td>
+            <td>${user.email || '—'}</td>
+            <td>${user.phone || '—'}</td>
+            <td><span class="badge ${user.role}">${user.role || '—'}</span></td>
+            <td>${delBtn}</td>
+        `; 
+    } 
+}
+
+async function renderScanLogs() { 
+    const container = document.getElementById('scanLogsFullList'); 
+    if (!container) return; 
+    
+    const logs = await loadLogs();
+    
+    if (logs.length === 0) {
+        container.innerHTML = '<div style="padding:20px;text-align:center;">No logs yet</div>';
+        return;
+    }
+    
+    container.innerHTML = logs.map(log => `
+        <div class="scan-log-item">
+            <div>
+                <span class="log-action">${log.action || 'Unknown'}</span>
+                <br>
+                <span class="log-time">${log.details || ''}</span>
+            </div>
+            <div>
+                <span class="log-time">${log.user_name || 'System'} - ${log.created_at || ''}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function updateHealthTagOptions() { 
+    const sel = document.getElementById('healthTagId'); 
+    if (!sel) return; 
+    
+    const animals = await loadAnimals();
+    sel.innerHTML = '<option value="">Select Animal</option>'; 
+    for (let animal of animals) { 
+        const opt = document.createElement('option'); 
+        opt.value = animal.id; 
+        opt.textContent = `${animal.name} (ID: ${animal.id}) - RFID: ${animal.rfid_tag || 'No RFID'}`; 
+        sel.appendChild(opt); 
+    } 
+}
+
+// ==================== LOGIN FUNCTION ====================
+async function performLogin() {
+    const role = document.getElementById('loginRole').value;
+    const password = document.getElementById('loginPassword').value;
+    const errorDiv = document.getElementById('loginError');
+    const helpDiv = document.getElementById('accountHelpMessage');
+    
+    errorDiv.style.display = 'none'; 
+    helpDiv.style.display = 'none';
+    
+    if (!password) { 
+        errorDiv.innerHTML = 'Please enter password'; 
+        errorDiv.style.display = 'block'; 
+        return; 
+    }
+    
+    const result = await apiCall('login', 'POST', { role: role, password: password });
+    
+    if (result && result.success) {
+        currentUser = result.user;
+        document.getElementById('landingPage').style.display = 'none';
+        document.getElementById('appContainer').style.display = 'block';
+        document.getElementById('loginModal').style.display = 'none';
+        document.getElementById('loginPassword').value = '';
+        updateUIByRole();
+        await refreshAllData();
+        showToast(`Welcome, ${currentUser.name}! RFID Scanner Ready`);
+    } else { 
+        errorDiv.innerHTML = result?.error || 'Invalid credentials!'; 
+        errorDiv.style.display = 'block'; 
+        helpDiv.style.display = 'block'; 
+    }
+}
+
+// ==================== CRUD OPERATIONS ====================
+async function editAnimal(id) { 
+    const animals = await loadAnimals();
+    const animal = animals.find(a => a.id == id); 
+    if (!animal) {
+        showToast('Animal not found', true);
+        return;
+    }
+    
+    document.getElementById('editAnimalId').value = animal.id; 
+    document.getElementById('generatedTagId').value = animal.id;
+    document.getElementById('rfidTagId').value = animal.rfid_tag || '';
+    document.getElementById('animalName').value = animal.name; 
+    document.getElementById('animalType').value = animal.animal_type; 
+    populateBreeds(); 
+    
+    setTimeout(() => {
+        const breedSelect = document.getElementById('animalBreed');
+        for(let i = 0; i < breedSelect.options.length; i++) {
+            if(breedSelect.options[i].value === animal.breed) {
+                breedSelect.selectedIndex = i;
+                break;
+            }
+        }
+    }, 100);
+    
+    document.getElementById('animalSex').value = animal.sex; 
+    document.getElementById('animalBirthdate').value = animal.birthdate || ''; 
+    document.getElementById('animalPregnant').value = animal.is_pregnant ? 'true' : 'false'; 
+    document.getElementById('animalSick').value = animal.is_sick ? 'true' : 'false'; 
+    document.getElementById('animalOwnerContact').value = animal.owner_contact || ''; 
+    navigateTo('registerAnimal'); 
+}
+
+async function deleteAnimal(id) { 
+    if (!currentUser || currentUser.role !== 'admin') { 
+        showToast("Only Admin can delete animals", true); 
+        return; 
+    } 
+    
+    const animals = await loadAnimals();
+    const animal = animals.find(a => a.id == id); 
+    
+    if (animal && confirm(`Delete ${animal.name}? This will also delete all health records.`)) {
+        const result = await apiCall(`animals/${id}`, 'DELETE', { 
+            userName: currentUser.name, 
+            userRole: currentUser.role 
+        });
+        
+        if (result && result.success) {
+            await refreshAllData();
+            showToast('Animal deleted successfully');
+        } else {
+            showToast('Failed to delete animal', true);
+        }
+    } 
+}
+
+async function editHealth(id) { 
+    const records = await loadHealthRecords();
+    const record = records.find(r => r.id == id); 
+    if (!record) {
+        showToast('Health record not found', true);
+        return;
+    }
+    
+    document.getElementById('editHealthId').value = record.id; 
+    document.getElementById('healthTagId').value = record.animal_id; 
+    document.getElementById('healthType').value = record.type; 
+    document.getElementById('healthStartDate').value = record.start_date || ''; 
+    document.getElementById('healthEndDate').value = record.end_date || ''; 
+    document.getElementById('healthNextEvent').value = record.next_event_date || ''; 
+    document.getElementById('healthNotes').value = record.notes || ''; 
+    document.getElementById('healthVetName').value = record.vet_name || ''; 
+    document.getElementById('healthVetContact').value = record.vet_contact || ''; 
+    navigateTo('registerHealth'); 
+}
+
+async function deleteHealth(id) { 
+    if (!currentUser || currentUser.role !== 'admin') { 
+        showToast("Only Admin can delete health records", true); 
+        return; 
+    } 
+    
+    const records = await loadHealthRecords();
+    const record = records.find(r => r.id == id);
+    if (record && confirm('Delete this health record?')) {
+        const result = await apiCall(`health/${id}`, 'DELETE', { 
+            userName: currentUser.name, 
+            userRole: currentUser.role 
+        });
+        
+        if (result && result.success) {
+            await refreshAllData();
+            showToast('Health record deleted successfully');
+        } else {
+            showToast('Failed to delete health record', true);
+        }
+    } 
+}
+
+async function deleteUser(id) { 
+    if (confirm('Delete this user?')) { 
+        const result = await apiCall(`users/${id}`, 'DELETE');
+        if (result && result.success) {
+            await refreshAllData();
+            renderUsersTable();
+            showToast('User deleted');
+        } else {
+            showToast('Failed to delete user', true);
+        }
+    } 
+}
+
+async function refreshAllData() {
+    await loadDashboardStats();
+    await renderAnimalsTable();
+    await renderHealthRecordsTable();
+    if (currentUser && currentUser.role === 'admin') {
+        await renderUsersTable();
+        await renderScanLogs();
+    }
+    await updateHealthTagOptions();
+}
+
+// ==================== FORM SUBMISSION HANDLERS ====================
+document.getElementById('registerAnimalForm').onsubmit = async function(e) {
+    e.preventDefault();
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'owner')) { 
+        showToast("Permission denied!", true); 
+        return; 
+    }
+    
+    const sex = document.getElementById('animalSex').value;
+    const isPregnant = document.getElementById('animalPregnant').value === 'true';
+    
+    if (sex === 'Male' && isPregnant) { 
+        document.getElementById('animalFormError').style.display = 'flex'; 
+        document.getElementById('animalFormError').innerHTML = 'ERROR: A male animal cannot be pregnant!'; 
+        return; 
+    }
+    
+    const editId = document.getElementById('editAnimalId').value;
+    const rfidTag = document.getElementById('rfidTagId').value.trim();
+    
+    if (!rfidTag) {
+        showToast("Please scan an RFID tag/card first!", true);
+        document.getElementById('rfidTagId').focus();
+        return;
+    }
+    
+    let autoId = document.getElementById('generatedTagId').value;
+    if (!autoId && !editId) {
+        const type = document.getElementById('animalType').value;
+        if (type) {
+            const typePrefix = type.substring(0, 3).toUpperCase();
+            const animals = await loadAnimals();
+            const existingOfType = animals.filter(a => a.animal_type === type);
+            const nextNumber = existingOfType.length + 1;
+            const paddedNumber = nextNumber.toString().padStart(3, '0');
+            autoId = `${typePrefix}-${paddedNumber}`;
+            document.getElementById('generatedTagId').value = autoId;
+        }
+    }
+    
+    const animalData = { 
+        id: autoId,
+        rfid_tag: rfidTag,
+        name: document.getElementById('animalName').value.trim(), 
+        animal_type: document.getElementById('animalType').value, 
+        breed: document.getElementById('animalBreed').value, 
+        sex: sex, 
+        birthdate: document.getElementById('animalBirthdate').value, 
+        is_pregnant: isPregnant, 
+        is_sick: document.getElementById('animalSick').value === 'true', 
+        owner_contact: document.getElementById('animalOwnerContact').value,
+        userName: currentUser.name,
+        userRole: currentUser.role
+    };
+    
+    if (!animalData.name || !animalData.animal_type || !animalData.breed) { 
+        showToast("Name, Type and Breed are required", true); 
+        return; 
+    }
+    
+    document.getElementById('animalFormError').style.display = 'none';
+    
+    let result;
+    if (editId) {
+        result = await apiCall(`animals/${editId}`, 'PUT', animalData);
+    } else {
+        result = await apiCall('animals', 'POST', animalData);
+    }
+    
+    if (result && result.success) {
+        await refreshAllData();
+        document.getElementById('editAnimalId').value = '';
+        this.reset();
+        document.getElementById('animalBreed').innerHTML = '<option value="">Select Breed</option>';
+        document.getElementById('generatedTagId').value = '';
+        document.getElementById('rfidTagId').value = '';
+        showToast(editId ? "Animal updated successfully" : `Animal registered! ID: ${autoId} | RFID: ${rfidTag}`);
+        navigateTo('animals');
+    } else {
+        showToast(result?.error || "Failed to save animal", true);
+    }
+};
+
+document.getElementById('registerHealthForm').onsubmit = async function(e) {
+    e.preventDefault();
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'vet')) { 
+        showToast("Only Admin or Vet can manage health records", true); 
+        return; 
+    }
+    
+    const selectedAnimalId = document.getElementById('healthTagId').value;
+    const animals = await loadAnimals();
+    const selectedAnimal = animals.find(a => a.id == selectedAnimalId);
+    const editId = document.getElementById('editHealthId').value;
+    
+    const recordData = { 
+        id: editId ? parseInt(editId) : null,
+        animal_id: selectedAnimalId,
+        rfid_tag: selectedAnimal ? selectedAnimal.rfid_tag : '',
+        animal_name: selectedAnimal ? selectedAnimal.name : '',
+        type: document.getElementById('healthType').value, 
+        start_date: document.getElementById('healthStartDate').value, 
+        end_date: document.getElementById('healthEndDate').value, 
+        next_event_date: document.getElementById('healthNextEvent').value, 
+        notes: document.getElementById('healthNotes').value, 
+        vet_name: document.getElementById('healthVetName').value, 
+        vet_contact: document.getElementById('healthVetContact').value,
+        userName: currentUser.name,
+        userRole: currentUser.role
+    };
+    
+    if (!recordData.animal_id || !recordData.start_date) { 
+        showToast("Animal and Start Date are required", true); 
+        return; 
+    }
+    
+    let result;
+    if (editId) {
+        result = await apiCall(`health/${editId}`, 'PUT', recordData);
+    } else {
+        result = await apiCall('health', 'POST', recordData);
+    }
+    
+    if (result && result.success) {
+        await refreshAllData();
+        document.getElementById('editHealthId').value = '';
+        this.reset();
+        showToast(editId ? "Health record updated" : "Health record saved");
+        navigateTo('healthRecords');
+    } else {
+        showToast(result?.error || "Failed to save health record", true);
+    }
+};
+
+document.getElementById('registerUserForm').onsubmit = async function(e) { 
+    e.preventDefault(); 
+    if (!currentUser || currentUser.role !== 'admin') { 
+        showToast("Only Admin can create accounts!", true); 
+        return; 
+    } 
+    
+    const newUser = { 
+        name: document.getElementById('newUserName').value, 
+        email: document.getElementById('newUserEmail').value, 
+        phone: document.getElementById('newUserPhone').value, 
+        role: document.getElementById('newUserRole').value, 
+        password: document.getElementById('newUserPassword').value || 'temp123',
+        userName: currentUser.name,
+        userRole: currentUser.role
+    }; 
+    
+    const result = await apiCall('users', 'POST', newUser);
+    
+    if (result && result.success) {
+        await refreshAllData();
+        renderUsersTable();
+        showToast(`Account created for ${newUser.name}`);
+        this.reset();
+    } else {
+        showToast(result?.error || "Failed to create user", true);
+    }
+};
+
+// ==================== LOG MANAGEMENT FUNCTIONS ====================
+async function recoverLastDeleted() {
+    if (!currentUser || currentUser.role !== 'admin') {
+        showToast("Only Admin can recover deleted items", true);
+        return;
+    }
+    
+    const result = await apiCall('recover', 'POST', {
+        userName: currentUser.name,
+        userRole: currentUser.role
+    });
+    
+    if (result && result.success) {
+        await refreshAllData();
+        showToast(`${result.type} recovered successfully`);
+        
+        const statusDiv = document.getElementById('recoverStatus');
+        statusDiv.style.display = 'block';
+        statusDiv.innerHTML = `<strong>✅ Recovery successful!</strong> ${result.type} has been restored.`;
+        setTimeout(() => { statusDiv.style.display = 'none'; }, 5000);
+    } else {
+        showToast(result?.error || "No items to recover", true);
+    }
+}
+
+async function deleteLogsOlderThanDays() {
+    if (!currentUser || currentUser.role !== 'admin') {
+        showToast("Only Admin can delete logs", true);
+        return;
+    }
+    const days = prompt("Delete logs older than how many days? (Enter number, e.g., 7)", "7");
+    if (days === null) return;
+    const numDays = parseInt(days);
+    if (isNaN(numDays) || numDays < 0) {
+        showToast("Please enter a valid number of days", true);
+        return;
+    }
+    
+    const result = await apiCall(`logs?days=${numDays}`, 'DELETE');
+    
+    if (result && result.success) {
+        await renderScanLogs();
+        showToast(`Deleted ${result.deleted} old logs.`);
+    } else {
+        showToast("Failed to delete logs", true);
+    }
+}
+
+async function deleteLogsByAction() {
+    if (!currentUser || currentUser.role !== 'admin') {
+        showToast("Only Admin can delete logs", true);
+        return;
+    }
+    
+    const logs = await loadLogs();
+    const actions = [...new Set(logs.map(l => l.action))];
+    if (actions.length === 0) {
+        showToast("No logs to filter", true);
+        return;
+    }
+    const actionList = actions.join(", ");
+    const actionToDelete = prompt(`Enter the exact action type to delete all logs with that action.\nAvailable actions:\n${actionList}\n\nExample: "Deleted Animal"`, "");
+    if (!actionToDelete) return;
+    
+    const result = await apiCall(`logs?action=${encodeURIComponent(actionToDelete)}`, 'DELETE');
+    
+    if (result && result.success) {
+        await renderScanLogs();
+        showToast(`Deleted ${result.deleted} logs with action "${actionToDelete}"`);
+    } else {
+        showToast("Failed to delete logs", true);
+    }
+}
+
+async function clearAllLogs() {
+    if (!currentUser || currentUser.role !== 'admin') {
+        showToast("Only Admin can clear all logs", true);
+        return;
+    }
+    if (confirm("⚠️ WARNING: This will delete ALL activity logs permanently. This action cannot be undone. Are you sure?")) {
+        const confirmation = prompt(`Type "DELETE ALL LOGS" to confirm:`);
+        if (confirmation === "DELETE ALL LOGS") {
+            const result = await apiCall('logs', 'DELETE');
+            if (result && result.success) {
+                await renderScanLogs();
+                showToast(`Deleted all logs.`);
+            } else {
+                showToast("Failed to delete logs", true);
+            }
+        } else {
+            showToast("Confirmation text did not match. Deletion cancelled.");
+        }
+    }
+}
+
+// ==================== NAVIGATION & UTILITY ====================
+function navigateTo(page) {
+    document.querySelectorAll('.main-content > div').forEach(div => div.classList.add('hidden'));
+    const section = document.getElementById(page + 'Section');
+    if (section) section.classList.remove('hidden');
+    
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    const activeLink = document.querySelector(`.nav-link[data-page="${page}"]`);
+    if (activeLink) activeLink.classList.add('active');
+    
+    if (page === 'dashboard') loadDashboardStats();
+    if (page === 'animals' && currentUser && currentUser.role !== 'vet') renderAnimalsTable();
+    if (page === 'healthRecords') renderHealthRecordsTable();
+    if (page === 'registerHealth') updateHealthTagOptions();
+    if (page === 'users' && currentUser && currentUser.role === 'admin') renderUsersTable();
+    if (page === 'scanLogs' && currentUser && currentUser.role === 'admin') renderScanLogs();
+    if (page === 'registerAnimal') {
+        setTimeout(() => {
+            const rfidInput = document.getElementById('rfidTagId');
+            if (rfidInput) {
+                rfidInput.value = '';
+                rfidInput.focus();
+            }
+            checkPendingRFIDTag();
+        }, 100);
+    }
+}
+
+function showToast(msg, isErr = false) {
+    const t = document.createElement('div');
+    t.className = 'toast' + (isErr ? ' error' : '');
+    t.innerText = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+}
+
+function logout() { 
+    currentUser = null; 
+    document.getElementById('landingPage').style.display = 'block'; 
+    document.getElementById('appContainer').style.display = 'none'; 
+    document.getElementById('loginModal').style.display = 'none'; 
+}
+
+function updateUIByRole() {
+    const role = currentUser.role;
+    const isVet = (role === 'vet');
+    document.getElementById('navAnimals').style.display = isVet ? 'none' : 'flex';
+    document.getElementById('navRegisterAnimal').style.display = (role === 'admin' || role === 'owner') ? 'flex' : 'none';
+    document.getElementById('navRegisterHealth').style.display = (role === 'admin' || role === 'vet') ? 'flex' : 'none';
+    document.getElementById('navUsers').style.display = (role === 'admin') ? 'flex' : 'none';
+    document.getElementById('navScanLogs').style.display = (role === 'admin') ? 'flex' : 'none';
+    document.getElementById('userAvatar').innerHTML = currentUser.name.charAt(0).toUpperCase();
+    document.getElementById('userName').innerHTML = currentUser.name;
+    const roleNames = { admin: 'Administrator', vet: 'Veterinarian', owner: 'Owner' };
+    document.getElementById('userRoleBadge').innerHTML = `<span class="badge ${role}">${roleNames[role]}</span>`;
+}
+
+// ==================== BREED DATABASE ====================
 const breedDatabase = {
     "Cow": ["Holstein Friesian", "Jersey", "Angus", "Hereford", "Sahiwal", "Ankole", "Simmental", "Charolais", "Limousin", "Brahman", "Gelbvieh"],
     "Goat": ["Boer", "Saanen", "Nubian", "Alpine", "Toggenburg", "Angora", "Kiko", "Spanish Goat", "Pygmy Goat", "LaMancha", "Oberhasli"],
@@ -335,431 +1131,115 @@ const breedDatabase = {
 
 const animalTypes = ["Cow", "Goat", "Sheep", "Pig", "Chicken", "Rabbit", "Horse", "Donkey", "Turkey", "Duck", "Bee"];
 
-// ========== THE ONLY LINE ADDED ==========
-const API_BASE_URL = 'http://localhost/AB';
-// ==========================================
+function populateAnimalTypes() {
+    const typeSelect = document.getElementById('animalType');
+    if (!typeSelect) return;
+    typeSelect.innerHTML = '<option value="">Select Type</option>';
+    animalTypes.forEach(type => { 
+        const opt = document.createElement('option'); 
+        opt.value = type; 
+        opt.textContent = type; 
+        typeSelect.appendChild(opt); 
+    });
+}
 
-let currentUser = null;
-let animals = [];
-let healthRecords = [];
-let systemUsers = [];
-let scanLogs = [];
-
-// NEW: Store deleted items for recovery (last 50 deletions)
-let deletedItemsStack = []; // each item: { type: 'animal' or 'health', data: object, timestamp, logId }
-
-function generateUniqueTagId(animalType) {
-    const upperType = animalType.toUpperCase();
-    const existingTags = animals.filter(a => a.animal_type === animalType).map(a => a.tag_id);
-    let maxNum = 0;
-    for (let tag of existingTags) {
-        const match = tag.match(new RegExp(`^${upperType}-(\\d+)$`));
-        if (match) {
-            maxNum = Math.max(maxNum, parseInt(match[1]));
-        }
+function populateBreeds() {
+    const type = document.getElementById('animalType').value;
+    const breedSelect = document.getElementById('animalBreed');
+    if (!breedSelect) return;
+    breedSelect.innerHTML = '<option value="">Select Breed</option>';
+    if (type && breedDatabase[type]) {
+        breedDatabase[type].forEach(breed => { 
+            const opt = document.createElement('option'); 
+            opt.value = breed; 
+            opt.textContent = breed; 
+            breedSelect.appendChild(opt); 
+        });
     }
-    const newNum = maxNum + 1;
-    return `${upperType}-${String(newNum).padStart(3, '0')}`;
+    updateGeneratedTagId();
 }
 
 function updateGeneratedTagId() {
     const type = document.getElementById('animalType').value;
     const editId = document.getElementById('editAnimalId').value;
     if (editId) {
-        const animal = animals.find(a => a.id == editId);
-        if (animal) {
-            document.getElementById('generatedTagId').value = animal.tag_id;
-            return;
-        }
+        // Don't auto-generate for edits
+        return;
     }
     if (type) {
-        const newTag = generateUniqueTagId(type);
-        document.getElementById('generatedTagId').value = newTag;
+        const typePrefix = type.substring(0, 3).toUpperCase();
+        // This will be updated when form is submitted with actual count from DB
+        document.getElementById('generatedTagId').value = `${typePrefix}-001`;
     } else {
         document.getElementById('generatedTagId').value = '';
     }
 }
 
-function loadDataFromStorage() {
-    animals = JSON.parse(localStorage.getItem('livestock_animals') || '[]');
-    healthRecords = JSON.parse(localStorage.getItem('livestock_health') || '[]');
-    systemUsers = JSON.parse(localStorage.getItem('livestock_users') || '[]');
-    scanLogs = JSON.parse(localStorage.getItem('livestock_logs') || '[]');
-    const deletedStack = localStorage.getItem('livestock_deleted_stack');
-    if (deletedStack) deletedItemsStack = JSON.parse(deletedStack);
-    else deletedItemsStack = [];
+function setupRFIDScanner() {
+    const rfidInput = document.getElementById('rfidTagId');
+    if (!rfidInput) return;
     
-    if (animals.length === 0) {
-        animals = [
-            { id: 1, tag_id: "COW-001", name: "Bessie", animal_type: "Cow", breed: "Holstein Friesian", sex: "Female", birthdate: "2020-03-15", is_pregnant: true, is_sick: false, owner_contact: "555-0101" },
-            { id: 2, tag_id: "COW-002", name: "Daisy", animal_type: "Cow", breed: "Jersey", sex: "Female", birthdate: "2021-07-22", is_pregnant: false, is_sick: false, owner_contact: "555-0102" },
-            { id: 3, tag_id: "GOAT-001", name: "Billy", animal_type: "Goat", breed: "Boer", sex: "Male", birthdate: "2022-01-10", is_pregnant: false, is_sick: true, owner_contact: "555-0103" },
-            { id: 4, tag_id: "HORSE-001", name: "Thunder", animal_type: "Horse", breed: "Arabian", sex: "Male", birthdate: "2019-06-15", is_pregnant: false, is_sick: false, owner_contact: "555-0104" }
-        ];
-        saveAnimals();
-    }
+    let rfidTimeout = null;
     
-    if (healthRecords.length === 0 && animals.length > 0) {
-        healthRecords = [
-            { id: 1, animal_tag_id: "COW-001", animal_name: "Bessie", type: "Pregnancy Check", start_date: "2024-01-15", end_date: "", next_event_date: "2024-04-15", notes: "Regular pregnancy checkup", vet_name: "Dr. Smith", vet_contact: "555-0201" },
-            { id: 2, animal_tag_id: "COW-002", animal_name: "Daisy", type: "Vaccination", start_date: "2024-02-01", end_date: "", next_event_date: "2024-08-01", notes: "Annual vaccination", vet_name: "Dr. Johnson", vet_contact: "555-0202" }
-        ];
-        saveHealthRecords();
-    }
+    rfidInput.addEventListener('keydown', function(e) {
+        if (rfidTimeout) clearTimeout(rfidTimeout);
+        
+        rfidTimeout = setTimeout(() => {
+            const scannedValue = rfidInput.value.trim();
+            if (scannedValue) {
+                // Check if RFID exists in database
+                checkRFIDExists(scannedValue);
+            }
+        }, 50);
+    });
     
-    if (systemUsers.length === 0) {
-        systemUsers = [
-            { id: 1, name: "Admin User", email: "admin@livestock.com", phone: "+250788000111", role: "admin", password: "admin123", approved: true },
-            { id: 2, name: "Dr. Sarah", email: "vet@livestock.com", phone: "+250788000222", role: "vet", password: "vet123", approved: true },
-            { id: 3, name: "Peter Owner", email: "owner@livestock.com", phone: "+250788000333", role: "owner", password: "owner123", approved: true }
-        ];
-        saveUsers();
+    rfidInput.addEventListener('focus', function() {
+        this.placeholder = "Ready to scan RFID...";
+        this.style.backgroundColor = '#f0f8ff';
+    });
+    
+    rfidInput.addEventListener('blur', function() {
+        this.placeholder = "Scan RFID card here...";
+        this.style.backgroundColor = 'white';
+    });
+}
+
+async function checkRFIDExists(rfidTag) {
+    const animals = await loadAnimals();
+    const existingAnimal = animals.find(a => a.rfid_tag === rfidTag);
+    if (existingAnimal) {
+        showToast(` RFID ${rfidTag} is already assigned to ${existingAnimal.name}`, true);
+        document.getElementById('rfidTagId').value = '';
+    } else {
+        showToast(`RFID Tag scanned: ${rfidTag}`, false);
+        const rfidInput = document.getElementById('rfidTagId');
+        rfidInput.style.borderColor = '#2d6a4f';
+        setTimeout(() => {
+            rfidInput.style.borderColor = '#c5d5cd';
+        }, 1000);
     }
 }
 
-function saveAnimals() { localStorage.setItem('livestock_animals', JSON.stringify(animals)); }
-function saveHealthRecords() { localStorage.setItem('livestock_health', JSON.stringify(healthRecords)); }
-function saveUsers() { localStorage.setItem('livestock_users', JSON.stringify(systemUsers)); }
-function saveLogs() { localStorage.setItem('livestock_logs', JSON.stringify(scanLogs)); }
-function saveDeletedStack() { localStorage.setItem('livestock_deleted_stack', JSON.stringify(deletedItemsStack)); }
-
-function addScanLog(action, details) {
-    if (currentUser) {
-        scanLogs.unshift({ id: Date.now(), user_name: currentUser.name, user_role: currentUser.role, action: action, details: details, created_at: new Date().toLocaleString() });
-        if (scanLogs.length > 100) scanLogs.pop();
-        saveLogs();
-    }
-}
-
-function showToast(msg, isErr = false) {
-    let t = document.createElement('div');
-    t.className = 'toast' + (isErr ? ' error' : '');
-    t.innerText = msg;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 3000);
-}
-
-function populateAnimalTypes() {
-    let typeSelect = document.getElementById('animalType');
-    typeSelect.innerHTML = '<option value="">Select Type</option>';
-    animalTypes.forEach(type => { let opt = document.createElement('option'); opt.value = type; opt.textContent = type; typeSelect.appendChild(opt); });
-}
-
-function populateBreeds() {
-    let type = document.getElementById('animalType').value;
-    let breedSelect = document.getElementById('animalBreed');
-    breedSelect.innerHTML = '<option value="">Select Breed</option>';
-    if (type && breedDatabase[type]) {
-        breedDatabase[type].forEach(breed => { let opt = document.createElement('option'); opt.value = breed; opt.textContent = breed; breedSelect.appendChild(opt); });
-    }
-    updateGeneratedTagId();
-}
-
+// ==================== EVENT LISTENERS & INITIALIZATION ====================
 document.getElementById('landingImageUpload').addEventListener('change', function(e) {
-    let file = e.target.files[0];
-    if (file) { let reader = new FileReader(); reader.onload = function(ev) { document.getElementById('landingImagePreview').innerHTML = `<img src="${ev.target.result}" style="width:100%; height:100%; object-fit:cover;">`; localStorage.setItem('livestock_landing_image', ev.target.result); }; reader.readAsDataURL(file); }
+    const file = e.target.files[0];
+    if (file) { 
+        const reader = new FileReader(); 
+        reader.onload = function(ev) { 
+            document.getElementById('landingImagePreview').innerHTML = `<img src="${ev.target.result}" style="width:100%; height:100%; object-fit:cover;">`; 
+            localStorage.setItem('livestock_landing_image', ev.target.result); 
+        }; 
+        reader.readAsDataURL(file); 
+    }
 });
+
+document.getElementById('showPasswordCheckbox').addEventListener('change', function(e) {
+    const passwordInput = document.getElementById('loginPassword');
+    passwordInput.type = e.target.checked ? 'text' : 'password';
+});
+
 const savedLandingImage = localStorage.getItem('livestock_landing_image');
 if (savedLandingImage) document.getElementById('landingImagePreview').innerHTML = `<img src="${savedLandingImage}" style="width:100%; height:100%; object-fit:cover;">`;
-
-function performLogin() {
-    let role = document.getElementById('loginRole').value, pwd = document.getElementById('loginPassword').value, errorDiv = document.getElementById('loginError'), helpDiv = document.getElementById('accountHelpMessage');
-    errorDiv.style.display = 'none'; helpDiv.style.display = 'none';
-    if (!pwd) { errorDiv.innerHTML = 'Please enter password'; errorDiv.style.display = 'block'; return; }
-    let found = systemUsers.find(u => u.role === role && u.password === pwd && u.approved);
-    if (found) {
-        currentUser = found;
-        document.getElementById('landingPage').style.display = 'none';
-        document.getElementById('appContainer').style.display = 'block';
-        document.getElementById('loginModal').style.display = 'none';
-        document.getElementById('loginPassword').value = '';
-        updateUIByRole();
-        refreshAllData();
-        addScanLog('Login', `${found.name} logged in`);
-        showToast(`Welcome, ${found.name}!`);
-    } else { errorDiv.innerHTML = 'Invalid credentials!'; errorDiv.style.display = 'block'; helpDiv.style.display = 'block'; }
-}
-
-function refreshAllData() {
-    updateDashboard();
-    renderAnimalsTable();
-    renderHealthRecordsTable();
-    renderUsersTable();
-    renderScanLogs();
-    updateHealthTagOptions();
-}
-
-function logout() { if (currentUser) addScanLog('Logout', `${currentUser.name} logged out`); currentUser = null; document.getElementById('landingPage').style.display = 'block'; document.getElementById('appContainer').style.display = 'none'; document.getElementById('loginModal').style.display = 'none'; }
-
-function updateUIByRole() {
-    let role = currentUser.role, isVet = (role === 'vet');
-    document.getElementById('navAnimals').style.display = isVet ? 'none' : 'flex';
-    document.getElementById('navRegisterAnimal').style.display = (role === 'admin' || role === 'owner') ? 'flex' : 'none';
-    document.getElementById('navRegisterHealth').style.display = (role === 'admin' || role === 'vet') ? 'flex' : 'none';
-    document.getElementById('navUsers').style.display = (role === 'admin') ? 'flex' : 'none';
-    document.getElementById('navScanLogs').style.display = (role === 'admin') ? 'flex' : 'none';
-    document.getElementById('userAvatar').innerHTML = currentUser.name.charAt(0).toUpperCase();
-    document.getElementById('userName').innerHTML = currentUser.name;
-    let roleNames = { admin: 'Administrator', vet: 'Veterinarian', owner: 'Owner' };
-    document.getElementById('userRoleBadge').innerHTML = `<span class="badge ${role}">${roleNames[role]}</span>`;
-}
-
-function navigateTo(page) {
-    document.querySelectorAll('.main-content > div').forEach(div => div.classList.add('hidden'));
-    document.getElementById(page + 'Section').classList.remove('hidden');
-    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-    let activeLink = document.querySelector(`.nav-link[data-page="${page}"]`);
-    if (activeLink) activeLink.classList.add('active');
-    if (page === 'dashboard') updateDashboard();
-    if (page === 'animals' && currentUser.role !== 'vet') renderAnimalsTable();
-    if (page === 'healthRecords') renderHealthRecordsTable();
-    if (page === 'registerHealth') updateHealthTagOptions();
-    if (page === 'users' && currentUser.role === 'admin') renderUsersTable();
-    if (page === 'scanLogs' && currentUser.role === 'admin') renderScanLogs();
-}
-
-function updateDashboard() {
-    document.getElementById('totalAnimals').innerText = animals.length;
-    document.getElementById('totalHealth').innerText = healthRecords.length;
-    document.getElementById('sickCount').innerText = animals.filter(a => a.is_sick).length;
-    document.getElementById('totalUsers').innerText = systemUsers.length;
-    let recent = ''; for (let i = 0; i < Math.min(5, scanLogs.length); i++) { recent += `<div style="padding:10px 0; border-bottom:1px solid #e0e8e2;"><strong>${scanLogs[i].action}</strong> - ${scanLogs[i].user_name}<br><span style="font-size:11px; color:#5a7a6a;">${scanLogs[i].created_at}</span></div>`; }
-    document.getElementById('recentActivityList').innerHTML = recent || '<p style="text-align:center; padding:20px;">No recent activity</p>';
-}
-
-function renderScanLogs() { 
-    let c = document.getElementById('scanLogsFullList'); 
-    if (!c) return; 
-    c.innerHTML = scanLogs.length ? scanLogs.map(l => `<div class="scan-log-item"><div><span class="log-action">${l.action}</span><br><span class="log-time">${l.details}</span></div><div><span class="log-time">${l.user_name} - ${l.created_at}</span></div></div>`).join('') : '<div style="padding:20px;text-align:center;">No logs yet</div>'; 
-}
-
-function renderAnimalsTable() {
-    if (currentUser && currentUser.role === 'vet') return;
-    let tbody = document.getElementById('animalsTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    if (animals.length === 0) { tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No animals registered. Click "Add Animal" to get started.</td>'; return; }
-    let canEdit = (currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner'));
-    let canDelete = (currentUser && currentUser.role === 'admin');
-    animals.forEach(animal => { let row = tbody.insertRow(); let btns = ''; if (canEdit) btns += `<button class="edit" onclick="editAnimal(${animal.id})">Edit</button>`; if (canDelete) btns += `<button class="delete" onclick="deleteAnimal(${animal.id})">Delete</button>`; row.innerHTML = `<td><strong>${animal.tag_id}</strong></td><td>${animal.name}</td><td>${animal.animal_type}</td><td>${animal.breed || ''}</td><td>${animal.sex}</td><td><span class="badge ${animal.is_pregnant ? 'pregnant' : 'healthy'}">${animal.is_pregnant ? 'Pregnant' : 'Not Pregnant'}</span></td><td><span class="badge ${animal.is_sick ? 'sick' : 'healthy'}">${animal.is_sick ? 'Sick' : 'Healthy'}</span></td><td>${btns}</td>`; });
-}
-
-function renderHealthRecordsTable() {
-    let tbody = document.getElementById('healthTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    if (healthRecords.length === 0) { tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No health records. Click "Add Health Record" to get started.</tr>'; return; }
-    let canEdit = (currentUser && (currentUser.role === 'admin' || currentUser.role === 'vet'));
-    let canDelete = (currentUser && currentUser.role === 'admin');
-    healthRecords.forEach(record => { let row = tbody.insertRow(); let btns = ''; if (canEdit) btns += `<button class="edit" onclick="editHealth(${record.id})">Edit</button>`; if (canDelete) btns += `<button class="delete" onclick="deleteHealth(${record.id})">Delete</button>`; row.innerHTML = `<td><strong>${record.animal_tag_id}</strong></td><td>${record.animal_name || '—'}</td><td><span class="badge vaccination">${record.type}</span></td><td>${record.start_date || '—'}</td><td>${record.end_date || '—'}</td><td>${record.next_event_date || '—'}</td><td>${record.vet_name || '—'}</td><td>${btns}</td>`; });
-}
-
-function updateHealthTagOptions() { let sel = document.getElementById('healthTagId'); if (!sel) return; sel.innerHTML = '<option value="">Select Animal</option>'; animals.forEach(animal => { let opt = document.createElement('option'); opt.value = animal.tag_id; opt.textContent = `${animal.name} (${animal.tag_id}) - ${animal.animal_type}`; sel.appendChild(opt); }); }
-
-document.getElementById('registerAnimalForm').onsubmit = function(e) {
-    e.preventDefault();
-    if (currentUser.role !== 'admin' && currentUser.role !== 'owner') { showToast("Permission denied!", true); return; }
-    let sex = document.getElementById('animalSex').value, preg = document.getElementById('animalPregnant').value === 'true';
-    if (sex === 'Male' && preg) { document.getElementById('animalFormError').style.display = 'flex'; document.getElementById('animalFormError').innerHTML = 'ERROR: A male animal cannot be pregnant!'; return; }
-    let editId = document.getElementById('editAnimalId').value;
-    let generatedTag = document.getElementById('generatedTagId').value;
-    let animalData = { id: editId ? parseInt(editId) : Date.now(), tag_id: generatedTag, name: document.getElementById('animalName').value.trim(), animal_type: document.getElementById('animalType').value, breed: document.getElementById('animalBreed').value, sex: sex, birthdate: document.getElementById('animalBirthdate').value, is_pregnant: preg, is_sick: document.getElementById('animalSick').value === 'true', owner_contact: document.getElementById('animalOwnerContact').value };
-    if (!animalData.name || !animalData.animal_type || !animalData.breed) { showToast("Name, Type and Breed are required", true); return; }
-    if (!editId && animals.some(a => a.tag_id === generatedTag)) { showToast("Tag ID already exists!", true); return; }
-    document.getElementById('animalFormError').style.display = 'none';
-    if (editId) { let index = animals.findIndex(a => a.id == editId); if (index !== -1) animals[index] = animalData; addScanLog('Updated Animal', `${animalData.name} updated`); showToast("Animal updated successfully"); } 
-    else { animals.push(animalData); addScanLog('Added Animal', `${animalData.name} registered with tag ${generatedTag}`); showToast("Animal registered successfully"); }
-    saveAnimals(); document.getElementById('editAnimalId').value = ''; this.reset(); document.getElementById('animalBreed').innerHTML = '<option value="">Select Breed</option>'; document.getElementById('generatedTagId').value = ''; refreshAllData(); navigateTo('animals');
-};
-
-document.getElementById('registerHealthForm').onsubmit = function(e) {
-    e.preventDefault();
-    if (currentUser.role !== 'admin' && currentUser.role !== 'vet') { showToast("Only Admin or Vet can manage health records", true); return; }
-    let selectedTag = document.getElementById('healthTagId').value, selectedAnimal = animals.find(a => a.tag_id === selectedTag);
-    let editId = document.getElementById('editHealthId').value;
-    let recordData = { id: editId ? parseInt(editId) : Date.now(), animal_tag_id: selectedTag, animal_name: selectedAnimal ? selectedAnimal.name : '', type: document.getElementById('healthType').value, start_date: document.getElementById('healthStartDate').value, end_date: document.getElementById('healthEndDate').value, next_event_date: document.getElementById('healthNextEvent').value, notes: document.getElementById('healthNotes').value, vet_name: document.getElementById('healthVetName').value, vet_contact: document.getElementById('healthVetContact').value };
-    if (!recordData.animal_tag_id || !recordData.start_date) { showToast("Animal and Start Date are required", true); return; }
-    if (editId) { let index = healthRecords.findIndex(r => r.id == editId); if (index !== -1) healthRecords[index] = recordData; addScanLog('Updated Health', `${recordData.type} record updated`); showToast("Health record updated"); } 
-    else { healthRecords.push(recordData); addScanLog('Added Health', `${recordData.type} record added for ${recordData.animal_tag_id}`); showToast("Health record saved"); }
-    saveHealthRecords(); document.getElementById('editHealthId').value = ''; this.reset(); refreshAllData(); navigateTo('healthRecords');
-};
-
-document.getElementById('registerUserForm').onsubmit = function(e) { e.preventDefault(); if (currentUser.role !== 'admin') { showToast("Only Admin can create accounts!", true); return; } let newUser = { id: Date.now(), name: document.getElementById('newUserName').value, email: document.getElementById('newUserEmail').value, phone: document.getElementById('newUserPhone').value, role: document.getElementById('newUserRole').value, password: document.getElementById('newUserPassword').value || 'temp123', approved: true }; systemUsers.push(newUser); saveUsers(); addScanLog('Created User', `Account for ${newUser.name} created`); showToast(`Account created for ${newUser.name}`); renderUsersTable(); this.reset(); };
-function renderUsersTable() { let tbody = document.getElementById('usersTable'); if (!tbody) return; tbody.innerHTML = ''; systemUsers.forEach(user => { let row = tbody.insertRow(); let delBtn = (currentUser?.role === 'admin' && user.role !== 'admin') ? `<button class="delete" onclick="deleteUser(${user.id})">Delete</button>` : '—'; row.innerHTML = `<td><strong>${user.name}</strong></td><td>${user.email}</td><td>${user.phone || ''}</td><td><span class="badge ${user.role}">${user.role}</span></td><td>${delBtn}</td>`; }); }
-function deleteUser(id) { if (confirm('Delete this user?')) { systemUsers = systemUsers.filter(u => u.id !== id); saveUsers(); renderUsersTable(); showToast('User deleted'); } }
-
-// MODIFIED: deleteAnimal now stores deleted item in stack
-function editAnimal(id) { let animal = animals.find(a => a.id === id); if (!animal) return; document.getElementById('editAnimalId').value = animal.id; document.getElementById('generatedTagId').value = animal.tag_id; document.getElementById('animalName').value = animal.name; document.getElementById('animalType').value = animal.animal_type; populateBreeds(); setTimeout(() => document.getElementById('animalBreed').value = animal.breed, 50); document.getElementById('animalSex').value = animal.sex; document.getElementById('animalBirthdate').value = animal.birthdate || ''; document.getElementById('animalPregnant').value = animal.is_pregnant ? 'true' : 'false'; document.getElementById('animalSick').value = animal.is_sick ? 'true' : 'false'; document.getElementById('animalOwnerContact').value = animal.owner_contact || ''; navigateTo('registerAnimal'); }
-
-function deleteAnimal(id) { 
-    if (currentUser.role !== 'admin') { showToast("Only Admin can delete animals", true); return; } 
-    let animal = animals.find(a => a.id === id); 
-    if (animal && confirm(`Delete ${animal.name}? This will also delete all health records.`)) {
-        // Store in deleted stack for recovery
-        deletedItemsStack.unshift({ type: 'animal', data: JSON.parse(JSON.stringify(animal)), timestamp: new Date().toISOString(), logId: Date.now() });
-        if (deletedItemsStack.length > 50) deletedItemsStack.pop();
-        saveDeletedStack();
-        
-        animals = animals.filter(a => a.id !== id); 
-        healthRecords = healthRecords.filter(h => h.animal_tag_id !== animal.tag_id); 
-        saveAnimals(); 
-        saveHealthRecords(); 
-        addScanLog('Deleted Animal', `${animal.tag_id} removed`); 
-        refreshAllData(); 
-        showToast('Animal deleted. You can recover from Activity Logs if needed.');
-    } 
-}
-
-// MODIFIED: deleteHealth now stores deleted item
-function editHealth(id) { let record = healthRecords.find(r => r.id === id); if (!record) return; document.getElementById('editHealthId').value = record.id; document.getElementById('healthTagId').value = record.animal_tag_id; document.getElementById('healthType').value = record.type; document.getElementById('healthStartDate').value = record.start_date || ''; document.getElementById('healthEndDate').value = record.end_date || ''; document.getElementById('healthNextEvent').value = record.next_event_date || ''; document.getElementById('healthNotes').value = record.notes || ''; document.getElementById('healthVetName').value = record.vet_name || ''; document.getElementById('healthVetContact').value = record.vet_contact || ''; navigateTo('registerHealth'); }
-
-function deleteHealth(id) { 
-    if (currentUser.role !== 'admin') { showToast("Only Admin can delete health records", true); return; } 
-    let record = healthRecords.find(r => r.id === id);
-    if (record && confirm('Delete this health record?')) {
-        deletedItemsStack.unshift({ type: 'health', data: JSON.parse(JSON.stringify(record)), timestamp: new Date().toISOString(), logId: Date.now() });
-        if (deletedItemsStack.length > 50) deletedItemsStack.pop();
-        saveDeletedStack();
-        
-        healthRecords = healthRecords.filter(r => r.id !== id); 
-        saveHealthRecords(); 
-        addScanLog('Deleted Health', `Health record for ${record.animal_tag_id} removed`); 
-        refreshAllData(); 
-        showToast('Health record deleted. You can recover from Activity Logs.');
-    } 
-}
-
-// ==================== NEW FUNCTIONS FOR LOG MANAGEMENT ====================
-function recoverLastDeleted() {
-    if (!currentUser || currentUser.role !== 'admin') {
-        showToast("Only Admin can recover deleted items", true);
-        return;
-    }
-    if (deletedItemsStack.length === 0) {
-        showToast("No deleted items available to recover", true);
-        document.getElementById('recoverStatus').style.display = 'none';
-        return;
-    }
-    const lastDeleted = deletedItemsStack[0];
-    if (lastDeleted.type === 'animal') {
-        const animalExists = animals.some(a => a.id === lastDeleted.data.id);
-        if (animalExists) {
-            showToast("Animal already exists, cannot recover duplicate", true);
-            deletedItemsStack.shift();
-            saveDeletedStack();
-            recoverLastDeleted();
-            return;
-        }
-        animals.push(lastDeleted.data);
-        saveAnimals();
-        addScanLog('Recovered Animal', `Restored ${lastDeleted.data.name} (${lastDeleted.data.tag_id})`);
-        showToast(`Recovered animal: ${lastDeleted.data.name}`);
-    } else if (lastDeleted.type === 'health') {
-        const healthExists = healthRecords.some(h => h.id === lastDeleted.data.id);
-        if (healthExists) {
-            showToast("Health record already exists", true);
-            deletedItemsStack.shift();
-            saveDeletedStack();
-            recoverLastDeleted();
-            return;
-        }
-        healthRecords.push(lastDeleted.data);
-        saveHealthRecords();
-        addScanLog('Recovered Health Record', `Restored ${lastDeleted.data.type} for ${lastDeleted.data.animal_tag_id}`);
-        showToast(`Recovered health record: ${lastDeleted.data.type}`);
-    }
-    deletedItemsStack.shift();
-    saveDeletedStack();
-    refreshAllData();
-    renderScanLogs();
-    
-    const statusDiv = document.getElementById('recoverStatus');
-    statusDiv.style.display = 'block';
-    statusDiv.innerHTML = `<strong>✅ Recovery successful!</strong> Last deleted item has been restored.`;
-    setTimeout(() => { statusDiv.style.display = 'none'; }, 5000);
-}
-
-function deleteLogsOlderThanDays() {
-    if (!currentUser || currentUser.role !== 'admin') {
-        showToast("Only Admin can delete logs", true);
-        return;
-    }
-    let days = prompt("Delete logs older than how many days? (Enter number, e.g., 7)", "7");
-    if (days === null) return;
-    days = parseInt(days);
-    if (isNaN(days) || days < 0) {
-        showToast("Please enter a valid number of days", true);
-        return;
-    }
-    const now = new Date();
-    const cutoff = new Date(now.setDate(now.getDate() - days));
-    const originalCount = scanLogs.length;
-    scanLogs = scanLogs.filter(log => {
-        const logDate = new Date(log.created_at);
-        return logDate >= cutoff;
-    });
-    if (scanLogs.length === originalCount) {
-        showToast(`No logs older than ${days} days found.`, false);
-    } else {
-        saveLogs();
-        addScanLog('Bulk Log Deletion', `Deleted ${originalCount - scanLogs.length} logs older than ${days} days`);
-        renderScanLogs();
-        showToast(`Deleted ${originalCount - scanLogs.length} old logs.`);
-    }
-}
-
-function deleteLogsByAction() {
-    if (!currentUser || currentUser.role !== 'admin') {
-        showToast("Only Admin can delete logs", true);
-        return;
-    }
-    const actions = [...new Set(scanLogs.map(l => l.action))];
-    if (actions.length === 0) {
-        showToast("No logs to filter", true);
-        return;
-    }
-    let actionList = actions.join(", ");
-    let actionToDelete = prompt(`Enter the exact action type to delete all logs with that action.\nAvailable actions:\n${actionList}\n\nExample: "Deleted Animal"`, "");
-    if (!actionToDelete) return;
-    const originalCount = scanLogs.length;
-    scanLogs = scanLogs.filter(log => log.action !== actionToDelete);
-    if (scanLogs.length === originalCount) {
-        showToast(`No logs found with action "${actionToDelete}"`, true);
-    } else {
-        saveLogs();
-        addScanLog('Bulk Log Deletion by Action', `Deleted ${originalCount - scanLogs.length} logs with action "${actionToDelete}"`);
-        renderScanLogs();
-        showToast(`Deleted ${originalCount - scanLogs.length} logs with action "${actionToDelete}"`);
-    }
-}
-
-function clearAllLogs() {
-    if (!currentUser || currentUser.role !== 'admin') {
-        showToast("Only Admin can clear all logs", true);
-        return;
-    }
-    if (confirm("⚠️ WARNING: This will delete ALL activity logs permanently. This action cannot be undone. Are you sure?")) {
-        if (confirm("Type 'DELETE ALL LOGS' to confirm:")) {
-            const confirmation = prompt(`Type "DELETE ALL LOGS" to confirm:`);
-            if (confirmation === "DELETE ALL LOGS") {
-                const deletedCount = scanLogs.length;
-                scanLogs = [];
-                saveLogs();
-                addScanLog('Cleared All Logs', `Admin deleted all ${deletedCount} logs`);
-                renderScanLogs();
-                showToast(`Deleted all ${deletedCount} logs.`);
-            } else {
-                showToast("Confirmation text did not match. Deletion cancelled.");
-            }
-        }
-    }
-}
-
-// Attach new event listeners after DOM loads
-document.getElementById('recoverLastDeletedBtn').addEventListener('click', recoverLastDeleted);
-document.getElementById('deleteLogsOlderThanBtn').addEventListener('click', deleteLogsOlderThanDays);
-document.getElementById('deleteLogsByActionBtn').addEventListener('click', deleteLogsByAction);
-document.getElementById('clearAllLogsBtn').addEventListener('click', clearAllLogs);
 
 document.getElementById('openLoginBtn').onclick = () => document.getElementById('loginModal').style.display = 'flex';
 document.getElementById('closeModalBtn').onclick = () => document.getElementById('loginModal').style.display = 'none';
@@ -769,8 +1249,46 @@ window.onclick = e => { if (e.target == document.getElementById('loginModal')) d
 document.getElementById('loginPassword').onkeypress = e => { if (e.key === 'Enter') performLogin(); };
 document.getElementById('animalType').addEventListener('change', function() { populateBreeds(); updateGeneratedTagId(); });
 
-populateAnimalTypes();
-loadDataFromStorage();
+document.getElementById('recoverLastDeletedBtn').addEventListener('click', recoverLastDeleted);
+document.getElementById('deleteLogsOlderThanBtn').addEventListener('click', deleteLogsOlderThanDays);
+document.getElementById('deleteLogsByActionBtn').addEventListener('click', deleteLogsByAction);
+document.getElementById('clearAllLogsBtn').addEventListener('click', clearAllLogs);
+
+// Initialize
+function init() {
+    populateAnimalTypes();
+    setupRFIDScanner();
+    console.log('Smart Livestock Management System Ready!');
+    console.log('Connected to PHP API at:', API_BASE_URL);
+    console.log('Demo Credentials:');
+    console.log('- Admin: admin123');
+    console.log('- Vet: vet123');
+    console.log('- Owner: owner123');
+}
+
+init();
+// Add this debug function
+async function testAPIConnection() {
+    try {
+        const response = await fetch('http://192.168.137.1/AB/api.php/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({role: 'admin', password: 'admin123'})
+        });
+        const data = await response.json();
+        console.log('API Test Result:', data);
+        if (!data.success) {
+            alert('API Error: ' + data.error);
+        }
+        return data;
+    } catch(e) {
+        console.error('API Connection Error:', e);
+        alert('Cannot connect to API. Check if server is running.');
+    }
+}
+
+// Call this when page loads
+testAPIConnection();
 </script>
 </body>
 </html>
